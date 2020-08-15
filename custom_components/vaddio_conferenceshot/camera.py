@@ -13,10 +13,10 @@ from . import DOMAIN as VADDIO_DOMAIN
 
 async def async_setup_platform(hass, config, add_entities, discovery_info=None):
     """Setup the Vaddio Conferenceshot switch platform."""
-    switches = []
+    cameras = []
     for _, vaddio_device in hass.data[VADDIO_DOMAIN].items():
-        switches.append(VaddioCamera(hass, vaddio_device))
-    add_entities(switches)
+        cameras.append(VaddioCamera(vaddio_device))
+    add_entities(cameras)
     return True
 
 
