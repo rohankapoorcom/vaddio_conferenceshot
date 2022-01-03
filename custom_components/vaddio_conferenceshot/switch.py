@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.helpers.device_registry import format_mac
 
 from . import DOMAIN as VADDIO_DOMAIN
 
@@ -23,11 +24,18 @@ class VaddioSwitch(SwitchEntity):
         """Initialize the switch."""
         self._vaddio_device = vaddio_device
         self._state = None
+        self._unique_id = format_mac(vaddio_device._mac_address)
+
 
     @property
     def name(self):
         """Return the name of the switch."""
         return self._vaddio_device.name
+
+    @property
+    def unique_id(self):
+        """Return the unique_id of this device."""
+        return self._unique_id
 
     def update(self):
         """Update the switch value."""

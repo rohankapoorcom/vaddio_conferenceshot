@@ -1,5 +1,6 @@
 from homeassistant.components.camera import Camera, SUPPORT_STREAM
 from homeassistant.const import CONF_NAME, CONF_PLATFORM
+from homeassistant.helpers.device_registry import format_mac
 
 
 from . import DOMAIN as VADDIO_DOMAIN
@@ -24,6 +25,7 @@ class VaddioCamera(Camera):
         self._stream_source = "rtsp://{}:554{}".format(
             vaddio_device._hostname, vaddio_device._path
         )
+        self._unique_id = format_mac(vaddio_device._mac_address)
 
     @property
     def supported_features(self):
@@ -34,6 +36,11 @@ class VaddioCamera(Camera):
     def name(self):
         """Return the name of this device."""
         return self._name
+
+    @property
+    def unique_id(self):
+        """Return the unique_id of this device."""
+        return self._unique_id
 
     async def stream_source(self):
         """Return the source of the stream."""
