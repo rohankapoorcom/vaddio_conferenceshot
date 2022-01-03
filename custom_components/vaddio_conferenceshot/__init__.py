@@ -2,7 +2,6 @@
 import logging
 import re
 import telnetlib
-import threading
 
 import voluptuous as vol
 
@@ -103,14 +102,12 @@ class VaddioDevice:
         self._username = username
         self._password = password
         self._path = path
-        self._lock = threading.Lock()
         self._mac_address = ""
         self._name = ""
         self._port = 23
         self._timeout = 0.5
         self._was_on = None
 
-        self._telnet = self._create_telnet_client()
         self._retrieve_info()
 
     def _create_telnet_client(self):
@@ -133,23 +130,25 @@ class VaddioDevice:
 
     def _telnet_command(self, command: str) -> [str]:
         """Send a telnet command to the camera."""
-        with self._lock:
-            try:
-                self._telnet.write(command.encode("ASCII") + b"\r")
-                response = self._telnet.read_until(b">", timeout=self._timeout)
-                _LOGGER.debug("telnet response: %s", response.decode("ASCII").strip())
-                return response.decode("ASCII").strip().splitlines()[1:]
-            except OSError as error:
-                _LOGGER.error(
-                    'Command "%s" failed with exception: %s', command, repr(error)
-                )
-            return None
+        try:
+            telnet = self._create_telnet_client()
+            telnet.write(command.encode("ASCII") + b"\r")
+            response = telnet.read_until(b">", timeout=self._timeout)
+            _LOGGER.debug("telnet response: %s", response.decode("ASCII").strip())
+            return response.decode("ASCII").strip().splitlines()[1:]
+        except OSError as error:
+            _LOGGER.error(
+                'Command "%s" failed with exception: %s', command, repr(error)
+            )
+        return None
+
 
     def _retrieve_info(self):
         """Retrieve the name and mac address from the camera."""
         response = self._telnet_command("network settings get")
         if not response:
             _LOGGER.error('Response was invalid, unable to retrieve information')
+            return
         self._mac_address = response[1].split()[-1].replace(":", "")
         self._name = response[6].split()[-1]
 
