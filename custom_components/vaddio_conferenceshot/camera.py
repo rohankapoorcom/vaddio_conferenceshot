@@ -1,18 +1,15 @@
 from homeassistant.components.camera import Camera, SUPPORT_STREAM
-from homeassistant.const import CONF_NAME, CONF_PLATFORM
 from homeassistant.helpers.device_registry import format_mac
 
+from .const import DOMAIN
+from .device import VaddioDevice
 
-from . import DOMAIN as VADDIO_DOMAIN
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    """Setup the Vaddio Conferenceshot switch platform from a config entry."""
+    vaddio_device = hass.data[DOMAIN][config_entry.entry_id]
 
-
-async def async_setup_platform(hass, config, add_entities, discovery_info=None):
-    """Setup the Vaddio Conferenceshot switch platform."""
-    cameras = []
-    for _, vaddio_device in hass.data[VADDIO_DOMAIN].items():
-        cameras.append(VaddioCamera(vaddio_device))
-    add_entities(cameras)
-    return True
+    if vaddio_device.streaming_enabled:
+        async_add_entities([VaddioCamera(vaddio_device)], False)
 
 
 class VaddioCamera(Camera):
@@ -21,9 +18,10 @@ class VaddioCamera(Camera):
     def __init__(self, vaddio_device):
         """Initialize as a subclass of GenericCamera."""
         super().__init__()
+        self._vaddio_device = vaddio_device
         self._name = vaddio_device.name
-        self._stream_source = "rtsp://{}:554{}".format(
-            vaddio_device._hostname, vaddio_device._path
+        self._stream_source = "rtsp://{}:{}/{}".format(
+            vaddio_device._hostname, vaddio_device._streaming_port, vaddio_device._path
         )
         self._unique_id = format_mac(vaddio_device._mac_address)
 
@@ -41,6 +39,18 @@ class VaddioCamera(Camera):
     def unique_id(self):
         """Return the unique_id of this device."""
         return self._unique_id
+
+    @property
+    def device_info(self):
+        """Return the device info."""
+        return {
+            "identifiers": {(DOMAIN, format_mac(self._vaddio_device._mac_address))},
+            "name": self._vaddio_device.name,
+            "manufacturer": VaddioDevice.manufacturer,
+            "model": self._vaddio_device.model,
+            "sw_version": self._vaddio_device.version,
+            "configuration_url": f"http://{self._vaddio_device._hostname}",
+        }
 
     async def stream_source(self):
         """Return the source of the stream."""
