@@ -8,6 +8,7 @@ from .device import VaddioDevice
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def validate_input(hass: HomeAssistantType, data: dict) -> VaddioDevice:
     """Validate the user input allows us to connect.
     Data has the keys from DATA_SCHEMA with the values provided by the user.
@@ -30,6 +31,7 @@ async def validate_input(hass: HomeAssistantType, data: dict) -> VaddioDevice:
 
 class VaddioConferenceShotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Vaddio Conferenceshot."""
+
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
@@ -40,8 +42,7 @@ class VaddioConferenceShotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 vaddio_device = await validate_input(self.hass, user_input)
                 return self.async_create_entry(
-                    title=f"Vaddio {vaddio_device.model}",
-                    data=user_input
+                    title=f"Vaddio {vaddio_device.model}", data=user_input
                 )
             except CannotConnect:
                 errors["base"] = "cannot_connect"
@@ -52,7 +53,7 @@ class VaddioConferenceShotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
-        
+
         return self.async_show_form(
             step_id="user", data_schema=DATA_SCHEMA, errors=errors
         )
@@ -60,6 +61,7 @@ class VaddioConferenceShotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 class CannotConnect(exceptions.HomeAssistantError):
     """Error to indicate we cannot connect."""
+
 
 class InvalidAuth(exceptions.HomeAssistantError):
     """Error to indicate there is invalid auth."""

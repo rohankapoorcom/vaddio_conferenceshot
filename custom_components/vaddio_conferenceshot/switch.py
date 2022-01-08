@@ -8,6 +8,7 @@ from .device import VaddioDevice
 
 SCAN_INTERVAL = timedelta(seconds=1)
 
+
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Setup the Vaddio Conferenceshot switch platform from a config entry."""
     vaddio_device = hass.data[DOMAIN][config_entry.entry_id]
@@ -22,7 +23,6 @@ class VaddioSwitch(SwitchEntity):
         self._vaddio_device = vaddio_device
         self._state = None
         self._unique_id = format_mac(vaddio_device._mac_address)
-
 
     @property
     def name(self):

@@ -16,13 +16,15 @@ CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 
 PLATFORMS = ["switch", "camera"]
 
+
 async def async_setup(hass: HomeAssistantType, config: dict):
-    """ Set up the Vaddio Conferenceshot Component."""
+    """Set up the Vaddio Conferenceshot Component."""
     hass.data.setdefault(DOMAIN, {})
     return True
 
+
 async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry):
-    """ Set up an instance of a Vaddio Conferenceshot Camera from a config entry."""
+    """Set up an instance of a Vaddio Conferenceshot Camera from a config entry."""
     vaddio_device = VaddioDevice(**entry.data)
     await hass.async_add_executor_job(vaddio_device.retrieve_info)
 
@@ -34,6 +36,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry):
         )
 
     return True
+
 
 async def async_unload_entry(hass: HomeAssistantType, entry: ConfigEntry):
     """Unload a config entry."""
@@ -49,6 +52,7 @@ async def async_unload_entry(hass: HomeAssistantType, entry: ConfigEntry):
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
+
 
 # SERVICE_RECALL_PRESET = "move_to_preset"
 # ATTR_MAC_ADDRESS = "mac_address"
