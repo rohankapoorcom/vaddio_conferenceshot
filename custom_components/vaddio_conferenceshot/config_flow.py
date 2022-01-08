@@ -1,6 +1,7 @@
 import logging
 
 from homeassistant import config_entries, exceptions
+from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.typing import HomeAssistantType
 
 from .const import DOMAIN, DATA_SCHEMA
@@ -39,11 +40,10 @@ class VaddioConferenceShotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the initial step."""
         errors = {}
         if user_input is not None:
+            vaddio_device = None
             try:
                 vaddio_device = await validate_input(self.hass, user_input)
-                return self.async_create_entry(
-                    title=f"Vaddio {vaddio_device.model}", data=user_input
-                )
+
             except CannotConnect:
                 errors["base"] = "cannot_connect"
 
@@ -53,6 +53,12 @@ class VaddioConferenceShotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
+
+            if vaddio_device is not None:
+                await self.async_set_unique_id(format_mac(vaddio_device._mac_address))
+                self._abort_if_unique_id_configured()
+
+                return self.async_create_entry(title=f"Vaddio {vaddio_device.model}", data=user_input)
 
         return self.async_show_form(
             step_id="user", data_schema=DATA_SCHEMA, errors=errors
