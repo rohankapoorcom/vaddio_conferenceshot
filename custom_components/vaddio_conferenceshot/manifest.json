@@ -1,11 +1,13 @@
 {
   "domain": "vaddio_conferenceshot",
   "name": "Vaddio Conferenceshot",
-  "documentation": "https://www.home-assistant.io/integrations/vaddio_conferenceshot",
+  "documentation": "https://github.com/rohankapoorcom/vaddio_conferenceshot",
   "issue_tracker": "https://github.com/rohankapoorcom/vaddio_conferenceshot/issues",
   "codeowners": ["@rohankapoorcom"],
   "dependencies": ["stream"],
   "version": "0.1.1",
-  "iot_class": "local_polling"
-
+  "iot_class": "local_polling",
+  "ssdp": [],
+	"zeroconf": [],
+	"homekit": {}
 }
