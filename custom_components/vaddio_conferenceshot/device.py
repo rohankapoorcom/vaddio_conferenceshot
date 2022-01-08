@@ -63,26 +63,25 @@ class VaddioDevice:
             )
         return None
 
-
     def retrieve_info(self):
         """Retrieve the name and mac address from the camera."""
         response = self._telnet_command("network settings get")
         if not response:
-            _LOGGER.error('Response was invalid, unable to retrieve network settings')
+            _LOGGER.error("Response was invalid, unable to retrieve network settings")
             return
         self._mac_address = response[1].split()[-1].replace(":", "")
         self._name = response[6].split()[-1]
 
         response = self._telnet_command("version")
         if not response:
-            _LOGGER.error('Response was invalid, unable to retrieve version info')
+            _LOGGER.error("Response was invalid, unable to retrieve version info")
             return
         self._model = response[2][15:-5]
         self._version = response[2][-5:]
 
         response = self._telnet_command("streaming settings get")
         if not response:
-            _LOGGER.error('Response was invalid, unable to retrieve streaming settings')
+            _LOGGER.error("Response was invalid, unable to retrieve streaming settings")
             return
         self._path = response[8].split()[-1]
         self._streaming_enabled = "true" == response[2].split()[-1]
