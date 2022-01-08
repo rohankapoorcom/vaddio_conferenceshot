@@ -30,7 +30,6 @@ jobs:
           with:
             black_args: "."
         - name: Update Pull Request
-          if: steps.action_black.outputs.is_formatted == 'true'
-          run: |
-            git commit -am ":art: Format Python code with psf/black"
-            git push
+          uses: EndBug/add-and-commit@v7
+          with:
+            default_author: github_actions
