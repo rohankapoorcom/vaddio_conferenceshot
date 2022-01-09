@@ -90,7 +90,7 @@ class VaddioDevice:
     def test_connection(self):
         """Tests the connection to the camcra."""
         try:
-            telnetlib.Telnet(self._hostname, self._port)
+            telnetlib.Telnet(self._hostname, self._port).close()
             return True
         except OSError as error:
             _LOGGER.error(
@@ -102,8 +102,10 @@ class VaddioDevice:
 
     def test_auth(self):
         """Tests the credentials for the camera."""
-        if self._create_telnet_client() is None:
+        telnet = self._create_telnet_client()
+        if telnet is None:
             return False
+        telnet.close()
         return True
 
     @property
@@ -136,7 +138,6 @@ class VaddioDevice:
         response = self._telnet_command("camera standby on")
         return response[0] == "OK"
 
-    @property
     def is_on(self) -> bool:
         """Return true if the camera is on"""
         tries = 5

@@ -36,7 +36,7 @@ class VaddioSwitch(SwitchEntity):
 
     def update(self):
         """Update the switch value."""
-        self._state = self._vaddio_device.is_on
+        self._state = self._vaddio_device.is_on()
 
     @property
     def should_poll(self):

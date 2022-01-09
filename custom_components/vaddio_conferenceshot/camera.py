@@ -1,13 +1,30 @@
+import logging
+import voluptuous as vol
+
+import homeassistant.helpers.config_validation as cv
 from homeassistant.components.camera import Camera, SUPPORT_STREAM
 from homeassistant.helpers.device_registry import format_mac
+from homeassistant.helpers import entity_platform
 
-from .const import DOMAIN
+from .const import DOMAIN, SERVICE_RECALL_PRESET, ATTR_PRESET_ID
 from .device import VaddioDevice
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Setup the Vaddio Conferenceshot switch platform from a config entry."""
     vaddio_device = hass.data[DOMAIN][config_entry.entry_id]
+
+    platform = entity_platform.current_platform.get()
+
+    platform.async_register_entity_service(
+        SERVICE_RECALL_PRESET,
+        {
+            vol.Required(ATTR_PRESET_ID): vol.All(cv.positive_int, vol.Range(min=1, max=16))
+        },
+        "async_recall_preset"
+    )
 
     if vaddio_device.streaming_enabled:
         async_add_entities([VaddioCamera(vaddio_device)], False)
@@ -56,3 +73,11 @@ class VaddioCamera(Camera):
     async def stream_source(self):
         """Return the source of the stream."""
         return self._stream_source
+
+    async def async_recall_preset(self, preset):
+        """An async wrapper to move the camera to the specified preset."""
+        if not await self.hass.async_add_executor_job(self._vaddio_device.is_on):
+            _LOGGER.error(f"Unable to move Vaddio Conferenceshot camera {self.name} because it is off")
+            return
+        if not await self.hass.async_add_executor_job(self._vaddio_device.move_to_preset, preset):
+            _LOGGER.error(f"Unable to move Vaddio Conferenceshot camera {self.name} to preset {preset}")
