@@ -21,9 +21,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     platform.async_register_entity_service(
         SERVICE_RECALL_PRESET,
         {
-            vol.Required(ATTR_PRESET_ID): vol.All(cv.positive_int, vol.Range(min=1, max=16))
+            vol.Required(ATTR_PRESET_ID): vol.All(
+                cv.positive_int, vol.Range(min=1, max=16)
+            )
         },
-        "async_recall_preset"
+        "async_recall_preset",
     )
 
     if vaddio_device.streaming_enabled:
@@ -77,7 +79,13 @@ class VaddioCamera(Camera):
     async def async_recall_preset(self, preset):
         """An async wrapper to move the camera to the specified preset."""
         if not await self.hass.async_add_executor_job(self._vaddio_device.is_on):
-            _LOGGER.error(f"Unable to move Vaddio Conferenceshot camera {self.name} because it is off")
+            _LOGGER.error(
+                f"Unable to move Vaddio Conferenceshot camera {self.name} because it is off"
+            )
             return
-        if not await self.hass.async_add_executor_job(self._vaddio_device.move_to_preset, preset):
-            _LOGGER.error(f"Unable to move Vaddio Conferenceshot camera {self.name} to preset {preset}")
+        if not await self.hass.async_add_executor_job(
+            self._vaddio_device.move_to_preset, preset
+        ):
+            _LOGGER.error(
+                f"Unable to move Vaddio Conferenceshot camera {self.name} to preset {preset}"
+            )
