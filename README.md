@@ -1,24 +1,28 @@
-The Vaddio Conferenceshot integration allows for the control of a Vaddio Conferenceshot, Conferenceshot AV, or Clearshot camera with Home Assistant.
+# Vaddio Conferenceshot integration for Home Assistant
 
-These cameras expose a telnet interface for getting their status as well as controlling them. This integration adds support for a very limited set of commands at this point. More can be added if there is a desire/request for them.
+The Vaddio Conferenceshot integration allows for the control of a Vaddio Conferenceshot, Conferenceshot AV, Clearshot or Roboshot camera from Home Assistant.
 
-Pull requests are welcome.
+These cameras expose a telnet interface for getting their status as well as controlling them.
 
-Basic configuration example. Replace the host with the ip address or hostname of your camera and add it's admin credentials. Unfortunately, these cameras only expose their telnet interface to the admin user. After restarting Home Assistant, a new switch and camera component will be available.
+Currently Supports:
+- Switch entity for turning on/off the camera.
+- Camera entity for viewing the RTSP streaming feed from cameras that support it.
+- The `camera` entity has a service that allows you to send the camera to a saved preset. See `custom_components/vaddio_conferenceshot/services.yaml` for documentation on the service call.
 
-```
-vaddio_conferenceshot:
-   - host: 192.168.1.100
-     username: admin
-     password: passsword
-```
+# Installation
 
-This integration exposes a service to move the camera to a desired preset position. The MAC Address can be formatted with dashes, colons or without separators. They will be all be converted to the same representation internally. The preset is an integer number between 1 and 16 (inclusive).
+The easiest way to install is through HACS. The Vaddio Conferenceshot integration is **not** included in the HACS default repositories so it will have to be added manually.
 
-The service call looks like this:
+1. In Home Assistant, select HACS -> Integrations -> Custom repositories. Add `https://github.com/rohankapoorcom/vaddio_conferenceshot` in the `Integration` category.
+2. In Home Assistant, select HACS -> Integrations -> + Explore and Download Repositories. Search for Vaddio Conferenceshot in the list and add it.
+3. Restart Home Assistant
+4. Set up and configure the integration: [![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=vaddio_conferenceshot)
 
-```
-vaddio_conferenceshot.move_to_preset:
-  mac_address: "AB:78:37:E4:D5:E0"
-  preset: 3
-```
+You will need your camera's IP address / Hostname and admin credentials to set up the integration.
+
+## Manual Installation
+
+Copy the `custom_components/vaddio_conferenceshot` directory to your `custom_components` folder. Restart Home Assistant, and add the integration from the integrations page.
+
+# Contributing
+Contributions are welcome! Please open a Pull Request with your changes.
