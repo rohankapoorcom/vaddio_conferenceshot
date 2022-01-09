@@ -77,7 +77,7 @@ class VaddioCamera(Camera):
         return self._stream_source
 
     async def async_recall_preset(self, preset):
-        """An async wrapper to move the camera to the specified preset."""
+        """Move the camera to the specified preset."""
         if not await self.hass.async_add_executor_job(self._vaddio_device.is_on):
             _LOGGER.error(
                 f"Unable to move Vaddio Conferenceshot camera {self.name} because it is off"
