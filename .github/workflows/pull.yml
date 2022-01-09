@@ -33,3 +33,4 @@ jobs:
           uses: EndBug/add-and-commit@v7
           with:
             default_author: github_actions
+            message: ":art: Format Python code with psf/black."

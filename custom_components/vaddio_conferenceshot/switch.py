@@ -3,18 +3,16 @@ from datetime import timedelta
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.helpers.device_registry import format_mac
 
-from . import DOMAIN as VADDIO_DOMAIN
+from .const import DOMAIN
+from .device import VaddioDevice
 
 SCAN_INTERVAL = timedelta(seconds=1)
 
 
-async def async_setup_platform(hass, config, add_entities, discovery_info=None):
-    """Setup the Vaddio Conferenceshot switch platform."""
-    switches = []
-    for _, vaddio_device in hass.data[VADDIO_DOMAIN].items():
-        switches.append(VaddioSwitch(vaddio_device))
-    add_entities(switches)
-    return True
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    """Setup the Vaddio Conferenceshot switch platform from a config entry."""
+    vaddio_device = hass.data[DOMAIN][config_entry.entry_id]
+    async_add_entities([VaddioSwitch(vaddio_device)], False)
 
 
 class VaddioSwitch(SwitchEntity):
@@ -25,7 +23,6 @@ class VaddioSwitch(SwitchEntity):
         self._vaddio_device = vaddio_device
         self._state = None
         self._unique_id = format_mac(vaddio_device._mac_address)
-
 
     @property
     def name(self):
@@ -39,7 +36,7 @@ class VaddioSwitch(SwitchEntity):
 
     def update(self):
         """Update the switch value."""
-        self._state = self._vaddio_device.is_on
+        self._state = self._vaddio_device.is_on()
 
     @property
     def should_poll(self):
@@ -50,6 +47,18 @@ class VaddioSwitch(SwitchEntity):
     def is_on(self):
         """Return True if the camera is on."""
         return self._state
+
+    @property
+    def device_info(self):
+        """Return the device info."""
+        return {
+            "identifiers": {(DOMAIN, format_mac(self._vaddio_device._mac_address))},
+            "name": self._vaddio_device.name,
+            "manufacturer": VaddioDevice.manufacturer,
+            "model": self._vaddio_device.model,
+            "sw_version": self._vaddio_device.version,
+            "configuration_url": f"http://{self._vaddio_device._hostname}",
+        }
 
     def turn_on(self, **kwargs):
         """Turn the camera on."""
