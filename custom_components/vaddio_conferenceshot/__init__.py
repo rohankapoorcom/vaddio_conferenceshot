@@ -25,8 +25,8 @@ async def async_setup(hass: HomeAssistantType, config: dict):
 
 async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry):
     """Set up an instance of a Vaddio Conferenceshot Camera from a config entry."""
-    vaddio_device = VaddioDevice(**entry.data)
-    await hass.async_add_executor_job(vaddio_device.retrieve_info)
+    vaddio_device = VaddioDevice(hass, **entry.data)
+    await vaddio_device.async_retrieve_info()
 
     hass.data[DOMAIN][entry.entry_id] = vaddio_device
 

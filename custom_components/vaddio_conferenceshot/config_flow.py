@@ -14,11 +14,8 @@ async def validate_input(hass: HomeAssistantType, data: dict) -> VaddioDevice:
     """Validate the user input allows us to connect.
     Data has the keys from DATA_SCHEMA with the values provided by the user.
     """
-    vaddio_device = VaddioDevice(**data)
-
-    await hass.async_add_executor_job(vaddio_device.test_auth)
-    await hass.async_add_executor_job(vaddio_device.retrieve_info)
-
+    vaddio_device = VaddioDevice(hass, **data)
+    await vaddio_device.async_retrieve_info()
     return vaddio_device
 
 

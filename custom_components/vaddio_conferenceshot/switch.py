@@ -18,7 +18,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class VaddioSwitch(SwitchEntity):
     """Representation of a Vaddio Camera switch."""
 
-    def __init__(self, vaddio_device):
+    def __init__(self, vaddio_device: VaddioDevice):
         """Initialize the switch."""
         self._vaddio_device = vaddio_device
         self._state = None
@@ -34,9 +34,9 @@ class VaddioSwitch(SwitchEntity):
         """Return the unique_id of this device."""
         return self._unique_id
 
-    def update(self):
+    async def async_update(self):
         """Update the switch value."""
-        self._state = self._vaddio_device.is_on()
+        self._state = await self._vaddio_device.async_is_on()
 
     @property
     def should_poll(self):
@@ -60,10 +60,10 @@ class VaddioSwitch(SwitchEntity):
             "configuration_url": f"http://{self._vaddio_device._hostname}",
         }
 
-    def turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs):
         """Turn the camera on."""
-        self._vaddio_device.turn_on()
+        await self._vaddio_device.async_turn_on()
 
-    def turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs):
         """Turn the camera off."""
-        self._vaddio_device.turn_off()
+        await self._vaddio_device.async_turn_off()

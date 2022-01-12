@@ -1,8 +1,11 @@
 """A representation of the Vaddio device."""
+import asyncio
 import logging
 import telnetlib
+from typing import List
 
 from homeassistant import exceptions
+from homeassistant.helpers.typing import HomeAssistantType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -12,8 +15,11 @@ class VaddioDevice:
 
     manufacturer = "Vaddio, LLC"
 
-    def __init__(self, host: str, username: str, password: str):
+    def __init__(
+        self, hass: HomeAssistantType, host: str, username: str, password: str
+    ):
         """Initiate a Vaddio Conferenceshot Device."""
+        self._hass = hass
         self._hostname = host
         self._username = username
         self._password = password
@@ -27,6 +33,8 @@ class VaddioDevice:
         self._timeout = 10
         self._was_on = None
         self._streaming_enabled = False
+        self._semaphore = asyncio.Semaphore(1)
+        self._telnet = self._create_telnet_client()
 
     def _create_telnet_client(self):
         """Create a telnet client for communication."""
@@ -56,13 +64,11 @@ class VaddioDevice:
             )
         raise CannotConnect
 
-    def _telnet_command(self, command: str) -> [str]:
+    def _telnet_command(self, command: str) -> List[str]:
         """Send a telnet command to the camera."""
         try:
-            telnet = self._create_telnet_client()
-            telnet.write(command.encode("ASCII") + b"\r")
-            response = telnet.read_until(b">", timeout=self._timeout)
-            telnet.close()
+            self._telnet.write(command.encode("ASCII") + b"\r")
+            response = self._telnet.read_until(b">", timeout=self._timeout)
             _LOGGER.debug("telnet response: %s", response.decode("ASCII").strip())
             return response.decode("ASCII").strip().splitlines()[1:]
         except (OSError, InvalidAuth, FIFOError, CannotConnect) as error:
@@ -71,37 +77,36 @@ class VaddioDevice:
             )
         return None
 
-    def retrieve_info(self):
+    async def async_telnet_command(self, command: str) -> List[str]:
+        """Send a telnet command to the camera (async) after grabbing the semaphore."""
+        async with self._semaphore:
+            return await self._hass.async_add_executor_job(
+                self._telnet_command, command
+            )
+
+    async def async_retrieve_info(self):
         """Retrieve the name and mac address from the camera."""
-        response = self._telnet_command("network settings get")
+        response = await self.async_telnet_command("network settings get")
         if not response:
             _LOGGER.error("Response was invalid, unable to retrieve network settings")
             return
         self._mac_address = response[1].split()[-1].replace(":", "")
         self._name = response[6].split()[-1]
 
-        response = self._telnet_command("version")
+        response = await self.async_telnet_command("version")
         if not response:
             _LOGGER.error("Response was invalid, unable to retrieve version info")
             return
         self._model = response[2][15:-5]
         self._version = response[2][-5:]
 
-        response = self._telnet_command("streaming settings get")
+        response = await self.async_telnet_command("streaming settings get")
         if not response:
             _LOGGER.error("Response was invalid, unable to retrieve streaming settings")
             return
         self._path = response[8].split()[-1]
-        self._streaming_enabled = "true" == response[2].split()[-1]
+        self._streaming_enabled = response[2].split()[-1] == "true"
         self._streaming_port = int(response[4].split()[-1])
-
-    def test_auth(self):
-        """Tests the credentials for the camera."""
-        telnet = self._create_telnet_client()
-        if telnet is None:
-            return False
-        telnet.close()
-        return True
 
     @property
     def mac_address(self) -> str:
@@ -123,21 +128,21 @@ class VaddioDevice:
         """Return the version of the camera."""
         return self._version
 
-    def turn_on(self) -> bool:
+    async def async_turn_on(self) -> bool:
         """Turn on the camera."""
-        response = self._telnet_command("camera standby off")
+        response = await self.async_telnet_command("camera standby off")
         return response[0] == "OK"
 
-    def turn_off(self) -> bool:
+    async def async_turn_off(self) -> bool:
         """Turn off the camera."""
-        response = self._telnet_command("camera standby on")
+        response = await self.async_telnet_command("camera standby on")
         return response[0] == "OK"
 
-    def is_on(self) -> bool:
+    async def async_is_on(self) -> bool:
         """Return true if the camera is on"""
         tries = 5
         while tries > 0:
-            response = self._telnet_command("camera standby get")
+            response = await self.async_telnet_command("camera standby get")
             if len(response) < 1:
                 _LOGGER.debug("Received invalid response from camera. Trying again...")
                 continue
@@ -153,13 +158,13 @@ class VaddioDevice:
         """Return true if the camera has streaming enabled"""
         return self._streaming_enabled
 
-    def move_to_preset(self, preset: int) -> bool:
+    async def async_move_to_preset(self, preset: int) -> bool:
         """Move the camera to a specified preset."""
         if preset < 1 or preset > 16:
-            _LOGGER.error('Preset "%s" out of range. Valid range is 1-16.', preset)
+            _LOGGER.error(f"Preset {preset} out of range. Valid range is 1-16.")
             return False
 
-        response = self._telnet_command("camera preset recall {}".format(preset))
+        response = await self.async_telnet_command(f"camera preset recall {preset}")
         return response[0] == "OK"
 
 

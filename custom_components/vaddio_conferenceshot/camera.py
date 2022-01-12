@@ -35,7 +35,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class VaddioCamera(Camera):
     """Representation of a Vaddio Camera."""
 
-    def __init__(self, vaddio_device):
+    def __init__(self, vaddio_device: VaddioDevice):
         """Initialize as a subclass of GenericCamera."""
         super().__init__()
         self._vaddio_device = vaddio_device
@@ -78,14 +78,12 @@ class VaddioCamera(Camera):
 
     async def async_recall_preset(self, preset):
         """Move the camera to the specified preset."""
-        if not await self.hass.async_add_executor_job(self._vaddio_device.is_on):
+        if not await self._vaddio_device.async_is_on():
             _LOGGER.error(
                 f"Unable to move Vaddio Conferenceshot camera {self.name} because it is off"
             )
             return
-        if not await self.hass.async_add_executor_job(
-            self._vaddio_device.move_to_preset, preset
-        ):
+        if not await self._vaddio_device.async_move_to_preset(preset):
             _LOGGER.error(
                 f"Unable to move Vaddio Conferenceshot camera {self.name} to preset {preset}"
             )
