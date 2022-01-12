@@ -2,6 +2,8 @@
 import logging
 import telnetlib
 
+from homeassistant import exceptions
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -34,11 +36,17 @@ class VaddioDevice:
             telnet.write(self._username.encode("ASCII") + b"\r")
             telnet.read_until(b"Password: ", self._timeout)
             telnet.write(self._password.encode("ASCII") + b"\r")
-            response = telnet.read_until(b"> ", self._timeout)
-            if "Login incorrect" in response.decode("ASCII").strip():
+            response = telnet.read_until(b"> ", self._timeout).decode("ASCII").strip()
+            if "Login incorrect" in response:
                 _LOGGER.error("Invalid credentials to connect to %s.", self._hostname)
-                return None
-            elif f"Welcome {self._username}" in response.decode("ASCII").strip():
+                raise InvalidAuth
+            if "System error. Can't create temporary FIFO." in response:
+                _LOGGER.error(
+                    "Received an error from the Vaddio Conferenceshot Camera."
+                    + " Please restart the camera."
+                )
+                raise FIFOError
+            if f"Welcome {self._username}" in response:
                 return telnet
         except OSError as error:
             _LOGGER.error(
@@ -46,7 +54,7 @@ class VaddioDevice:
                 self._hostname,
                 repr(error),
             )
-        return None
+        raise CannotConnect
 
     def _telnet_command(self, command: str) -> [str]:
         """Send a telnet command to the camera."""
@@ -57,7 +65,7 @@ class VaddioDevice:
             telnet.close()
             _LOGGER.debug("telnet response: %s", response.decode("ASCII").strip())
             return response.decode("ASCII").strip().splitlines()[1:]
-        except OSError as error:
+        except (OSError, InvalidAuth, FIFOError, CannotConnect) as error:
             _LOGGER.error(
                 'Command "%s" failed with exception: %s', command, repr(error)
             )
@@ -86,19 +94,6 @@ class VaddioDevice:
         self._path = response[8].split()[-1]
         self._streaming_enabled = "true" == response[2].split()[-1]
         self._streaming_port = int(response[4].split()[-1])
-
-    def test_connection(self):
-        """Tests the connection to the camcra."""
-        try:
-            telnetlib.Telnet(self._hostname, self._port).close()
-            return True
-        except OSError as error:
-            _LOGGER.error(
-                "Unable to connect via Telnet to %s. Received exception: %s",
-                self._hostname,
-                repr(error),
-            )
-        return False
 
     def test_auth(self):
         """Tests the credentials for the camera."""
@@ -166,3 +161,15 @@ class VaddioDevice:
 
         response = self._telnet_command("camera preset recall {}".format(preset))
         return response[0] == "OK"
+
+
+class CannotConnect(exceptions.HomeAssistantError):
+    """Error to indicate we cannot connect."""
+
+
+class InvalidAuth(exceptions.HomeAssistantError):
+    """Error to indicate there is invalid auth."""
+
+
+class FIFOError(exceptions.HomeAssistantError):
+    """Error to indicate the camera needs to be restarted."""

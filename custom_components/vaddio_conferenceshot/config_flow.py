@@ -1,11 +1,11 @@
 import logging
 
-from homeassistant import config_entries, exceptions
+from homeassistant import config_entries
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.typing import HomeAssistantType
 
-from .const import DOMAIN, DATA_SCHEMA
-from .device import VaddioDevice
+from .const import DATA_SCHEMA, DOMAIN
+from .device import CannotConnect, FIFOError, InvalidAuth, VaddioDevice
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,17 +16,9 @@ async def validate_input(hass: HomeAssistantType, data: dict) -> VaddioDevice:
     """
     vaddio_device = VaddioDevice(**data)
 
-    response = await hass.async_add_executor_job(vaddio_device.test_connection)
-
-    if not response:
-        raise CannotConnect
-
-    response = await hass.async_add_executor_job(vaddio_device.test_auth)
-
-    if not response:
-        raise InvalidAuth
-
+    await hass.async_add_executor_job(vaddio_device.test_auth)
     await hass.async_add_executor_job(vaddio_device.retrieve_info)
+
     return vaddio_device
 
 
@@ -50,6 +42,9 @@ class VaddioConferenceShotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except InvalidAuth:
                 errors["base"] = "invalid_auth"
 
+            except FIFOError:
+                errors["base"] = "reboot_camera"
+
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
@@ -65,11 +60,3 @@ class VaddioConferenceShotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user", data_schema=DATA_SCHEMA, errors=errors
         )
-
-
-class CannotConnect(exceptions.HomeAssistantError):
-    """Error to indicate we cannot connect."""
-
-
-class InvalidAuth(exceptions.HomeAssistantError):
-    """Error to indicate there is invalid auth."""
