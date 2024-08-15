@@ -15,9 +15,7 @@ class VaddioDevice:
 
     manufacturer = "Vaddio, LLC"
 
-    def __init__(
-        self, hass: HomeAssistant, host: str, username: str, password: str
-    ):
+    def __init__(self, hass: HomeAssistant, host: str, username: str, password: str):
         """Initiate a Vaddio Conferenceshot Device."""
         self._hass = hass
         self._hostname = host
