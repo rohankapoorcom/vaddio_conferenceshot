@@ -1,10 +1,5 @@
 {
   "name": "Vaddio Conferenceshot",
   "render_readme": true,
-  "iot_class": "Local Polling",
-  "domains": [
-    "switch",
-    "camera"
-  ],
-  "homeassistant": "0.113.0"
+  "homeassistant": "2024.8"
 }
